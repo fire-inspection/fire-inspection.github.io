@@ -1,0 +1,498 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+.app { font-family: 'Noto Sans KR','Apple SD Gothic Neo',sans-serif; max-width: 480px; margin: 0 auto; background: #F0EFEB; min-height: 600px; display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; }
+.header { background: #fff; padding: 14px 18px 13px; display: flex; align-items: flex-start; gap: 12px; border-bottom: 1px solid rgba(0,0,0,0.08); }
+.header-icon { width: 36px; height: 36px; background: #FAECE7; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+.header h1 { font-size: 15px; font-weight: 700; color: #1A1A18; margin-bottom: 6px; }
+.date-row { display: flex; align-items: center; gap: 5px; }
+.date-label { font-size: 11px; color: #9A9A96; font-weight: 500; }
+.date-val { font-size: 12px; color: #1A1A18; font-weight: 500; cursor: pointer; border-bottom: 1px dashed #D85A30; }
+.date-edit-wrap { display: none; margin-top: 4px; }
+.date-edit-wrap input[type=date] { font-size: 12px; padding: 3px 8px; border: 1px solid #D85A30; border-radius: 6px; background: #fff; font-family: inherit; color: #1A1A18; width: auto; margin-bottom: 0; }
+
+/* inline name editor popup */
+.name-popup { display: none; position: absolute; background: #fff; border: 1px solid #E8E8E5; border-radius: 10px; padding: 10px 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 200; min-width: 180px; }
+.name-popup input { width: 100%; padding: 7px 10px; border: 1px solid #E8E8E5; border-radius: 6px; font-family: inherit; font-size: 13px; color: #1A1A18; background: #F4F4F2; margin-bottom: 8px; }
+.name-popup input:focus { outline: none; border-color: #D85A30; }
+.name-popup-btns { display: flex; gap: 6px; }
+.name-popup-btns button { flex: 1; padding: 6px; border-radius: 6px; border: none; font-family: inherit; font-size: 12px; cursor: pointer; }
+.btn-confirm { background: #D85A30; color: #fff; font-weight: 600; }
+.btn-cancel { background: #F4F4F2; color: #5A5A56; }
+
+.tabs { background: #fff; display: flex; border-bottom: 1px solid rgba(0,0,0,0.08); }
+.tab { flex: 1; padding: 11px 4px; text-align: center; font-size: 12px; font-weight: 500; color: #9A9A96; border: none; background: transparent; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: inherit; }
+.tab.active { color: #D85A30; border-bottom-color: #D85A30; }
+.content { flex: 1; padding: 14px; }
+.card { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 10px; border: 1px solid rgba(0,0,0,0.08); }
+.card-label { font-size: 10px; font-weight: 700; color: #9A9A96; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #E8E8E5; background: #F4F4F2; font-family: inherit; font-size: 14px; color: #1A1A18; appearance: none; -webkit-appearance: none; margin-bottom: 6px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239A9A96' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+.info-pill { display: flex; align-items: center; gap: 6px; background: #F4F4F2; border-radius: 8px; padding: 9px 12px; font-size: 13px; flex-wrap: wrap; margin-bottom: 0; }
+.loc-badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+.camera-wrap { border: 2px dashed #E8E8E5; border-radius: 8px; min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; background: #F4F4F2; overflow: hidden; transition: border-color 0.2s; }
+.camera-wrap.has-img { border-style: solid; border-color: #1D9E75; }
+.camera-wrap img { width: 100%; height: 150px; object-fit: cover; }
+#fileInput { display: none; }
+.chk-item { display: flex; align-items: center; gap: 11px; padding: 11px 0; border-bottom: 1px solid #E8E8E5; cursor: pointer; user-select: none; -webkit-user-select: none; }
+.chk-item:last-child { border-bottom: none; }
+.chk-box { width: 22px; height: 22px; border-radius: 6px; border: 2px solid #E8E8E5; background: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+.chk-box.checked { background: #1D9E75; border-color: #1D9E75; }
+.chk-box svg { display: none; }
+.chk-box.checked svg { display: block; }
+.chk-ic { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; }
+.chk-txt strong { font-size: 13px; font-weight: 500; color: #1A1A18; display: block; }
+.chk-txt span { font-size: 11px; color: #9A9A96; margin-top: 1px; display: block; }
+.prog-wrap { margin-top: 12px; padding-top: 10px; border-top: 1px solid #E8E8E5; }
+.prog-top { display: flex; justify-content: space-between; margin-bottom: 5px; }
+.prog-top span { font-size: 12px; color: #9A9A96; }
+.prog-top strong { font-size: 12px; font-weight: 700; color: #1A1A18; }
+.prog-bg { height: 5px; background: #E8E8E5; border-radius: 3px; }
+.prog-fill { height: 5px; background: #1D9E75; border-radius: 3px; transition: width 0.3s; }
+.btn-primary { width: 100%; padding: 13px; background: #D85A30; color: white; border: none; border-radius: 8px; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 8px; }
+.btn-primary:active { opacity: 0.85; }
+.btn-secondary { width: 100%; padding: 11px; background: #F4F4F2; color: #5A5A56; border: 1px solid #E8E8E5; border-radius: 8px; font-family: inherit; font-size: 14px; cursor: pointer; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 11px 20px; border-radius: 30px; font-size: 13px; font-weight: 500; z-index: 999; white-space: nowrap; opacity: 0; transition: opacity 0.3s; pointer-events: none; font-family: inherit; }
+.toast.ok { background: #1A1A18; color: #fff; }
+.toast.err { background: #A32D2D; color: #fff; }
+.toast.show { opacity: 1; }
+.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-bottom: 12px; }
+.stat-box { background: #fff; border-radius: 8px; padding: 10px 6px; text-align: center; border: 1px solid rgba(0,0,0,0.08); }
+.stat-n { font-size: 20px; font-weight: 700; }
+.stat-l { font-size: 10px; color: #9A9A96; margin-top: 1px; }
+.badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; white-space: nowrap; display: inline-block; }
+.b-pass { background: #E1F5EE; color: #0F6E56; }
+.b-fail { background: #FCEBEB; color: #A32D2D; }
+.b-pend { background: #E8E8E5; color: #9A9A96; }
+.b-part { background: #FAECE7; color: #993C1D; }
+.filter-wrap { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 2px; scrollbar-width: none; }
+.filter-wrap::-webkit-scrollbar { display: none; }
+.flt-btn { flex-shrink: 0; font-size: 11px; padding: 5px 11px; border-radius: 20px; border: 1px solid #E8E8E5; background: #fff; color: #9A9A96; cursor: pointer; font-family: inherit; }
+.flt-btn.on { background: #D85A30; color: #fff; border-color: #D85A30; }
+.list-item { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid #E8E8E5; }
+.list-item:last-child { border-bottom: none; }
+.thumb-s { width: 36px; height: 36px; border-radius: 7px; object-fit: cover; border: 1px solid #E8E8E5; flex-shrink: 0; }
+.thumb-ph { width: 36px; height: 36px; border-radius: 7px; background: #F4F4F2; border: 1px solid #E8E8E5; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+.list-info { flex: 1; min-width: 0; }
+.list-id { font-size: 14px; font-weight: 700; color: #1A1A18; }
+.list-sub { font-size: 11px; color: #9A9A96; margin-top: 2px; }
+.chk-dots { display: flex; gap: 3px; margin-top: 4px; }
+.dot { width: 15px; height: 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; }
+.dot-ok { background: #E1F5EE; color: #0F6E56; }
+.dot-ng { background: #FCEBEB; color: #A32D2D; }
+.insp-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #E8E8E5; position: relative; }
+.insp-item:last-child { border-bottom: none; }
+.insp-av { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.insp-info { flex: 1; }
+.insp-name { font-size: 13px; font-weight: 500; color: #1A1A18; }
+.mini-prog { height: 4px; background: #E8E8E5; border-radius: 2px; margin-top: 5px; }
+.mini-fill { height: 4px; background: #1D9E75; border-radius: 2px; }
+.loc-section { margin-bottom: 12px; }
+.loc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.go-btn { font-size: 11px; padding: 4px 11px; border-radius: 20px; border: 1px solid #D85A30; color: #D85A30; background: transparent; cursor: pointer; font-family: inherit; flex-shrink: 0; }
+.empty { text-align: center; padding: 30px 0; color: #9A9A96; font-size: 13px; }
+
+/* 점검자 이름 클릭 편집 */
+.editable-name { cursor: pointer; border-bottom: 1px dashed #9A9A96; display: inline; padding-bottom: 1px; }
+.editable-name:hover { border-bottom-color: #D85A30; color: #D85A30; }
+.edit-tag { font-size: 10px; color: #D85A30; margin-left: 3px; vertical-align: middle; }
+</style>
+
+<div class="app">
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="header-icon">🧯</div>
+    <div style="flex:1;">
+      <h1>소화기 관리 점검 시스템</h1>
+      <div class="date-row">
+        <span class="date-label">점검일 :</span>
+        <span class="date-val" id="dateVal" onclick="toggleDateEdit()"></span>
+        <span style="font-size:10px;color:#D85A30;cursor:pointer;margin-left:3px;" onclick="toggleDateEdit()">✏️</span>
+      </div>
+      <div class="date-edit-wrap" id="dateEditWrap">
+        <input type="date" id="dateInput" onchange="applyDate()" />
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('inspect')">📷 점검하기</button>
+    <button class="tab" onclick="switchTab('checklist')">📋 체크리스트</button>
+    <button class="tab" onclick="switchTab('inspector')">👥 점검자</button>
+  </div>
+
+  <!-- 점검하기 -->
+  <div id="tab-inspect" class="content">
+    <div class="card">
+      <div class="card-label">소화기 선택</div>
+      <select id="extSelect" onchange="onSelectExt()">
+        <option value="">— 소화기를 선택하세요 —</option>
+      </select>
+      <div id="selInfo" style="display:none;" class="info-pill"></div>
+    </div>
+    <div class="card">
+      <div class="card-label">소화기 사진 촬영</div>
+      <div class="camera-wrap" id="camWrap" onclick="document.getElementById('fileInput').click()">
+        <div id="camHolder"><div style="font-size:32px;">📷</div><div style="font-size:13px;color:#9A9A96;margin-top:4px;">탭하여 사진 촬영</div></div>
+        <img id="prevImg" style="display:none;" alt="소화기 사진" />
+      </div>
+      <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="handlePhoto(event)" />
+    </div>
+    <div class="card">
+      <div class="card-label">점검 항목</div>
+      <div class="chk-item" onclick="toggleChk(1)">
+        <div class="chk-box" id="box1"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="chk-ic" style="background:#E6F1FB;">📄</div>
+        <div class="chk-txt"><strong>사용법 표시</strong><span>사용 방법 라벨 부착·식별 가능한 상태</span></div>
+      </div>
+      <div class="chk-item" onclick="toggleChk(2)">
+        <div class="chk-box" id="box2"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="chk-ic" style="background:#EEEDFE;">🔩</div>
+        <div class="chk-txt"><strong>나사의 손상</strong><span>헤드·밸브 나사 파손·변형 없음</span></div>
+      </div>
+      <div class="chk-item" onclick="toggleChk(3)">
+        <div class="chk-box" id="box3"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="chk-ic" style="background:#E1F5EE;">🌊</div>
+        <div class="chk-txt"><strong>호스의 손상</strong><span>호스 균열·꺾임·막힘 없음</span></div>
+      </div>
+      <div class="chk-item" onclick="toggleChk(4)">
+        <div class="chk-box" id="box4"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="chk-ic" style="background:#FAEEDA;">⏱️</div>
+        <div class="chk-txt"><strong>충약 상태</strong><span>압력 게이지 녹색 범위, 충약량 정상</span></div>
+      </div>
+      <div class="chk-item" onclick="toggleChk(5)">
+        <div class="chk-box" id="box5"><svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="chk-ic" style="background:#FAECE7;">🔒</div>
+        <div class="chk-txt"><strong>봉인 상태</strong><span>안전핀·봉인 씰 훼손 없음</span></div>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-top"><span>점검 진행</span><strong id="progTxt">0 / 5</strong></div>
+        <div class="prog-bg"><div class="prog-fill" id="progBar" style="width:0%"></div></div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="submitInsp()">✅ 점검 완료 등록</button>
+    <button class="btn-secondary" onclick="resetForm()">초기화</button>
+  </div>
+
+  <!-- 체크리스트 -->
+  <div id="tab-checklist" class="content" style="display:none;">
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-n" id="s-total">37</div><div class="stat-l">전체</div></div>
+      <div class="stat-box"><div class="stat-n" style="color:#1D9E75;" id="s-done">0</div><div class="stat-l">완료</div></div>
+      <div class="stat-box"><div class="stat-n" style="color:#9A9A96;" id="s-pend">37</div><div class="stat-l">미점검</div></div>
+      <div class="stat-box"><div class="stat-n" style="color:#D85A30;" id="s-pct">0%</div><div class="stat-l">완료율</div></div>
+    </div>
+    <div class="prog-bg" style="margin-bottom:12px;"><div class="prog-fill" id="pbar" style="width:0%"></div></div>
+    <div class="filter-wrap">
+      <button class="flt-btn on" onclick="setFilter('all',this)">전체</button>
+      <button class="flt-btn" onclick="setFilter('지하1층 식당',this)">지하1층 식당</button>
+      <button class="flt-btn" onclick="setFilter('사무동 1층',this)">사무동 1층</button>
+      <button class="flt-btn" onclick="setFilter('사무동 2층',this)">사무동 2층</button>
+      <button class="flt-btn" onclick="setFilter('사무동 3층',this)">사무동 3층</button>
+      <button class="flt-btn" onclick="setFilter('done',this)">완료만</button>
+      <button class="flt-btn" onclick="setFilter('pend',this)">미점검만</button>
+    </div>
+    <div class="card" style="padding:0 14px;" id="listCard"></div>
+  </div>
+
+  <!-- 점검자 탭 -->
+  <div id="tab-inspector" class="content" style="display:none;">
+    <div class="card"><div class="card-label">위치별 현황</div><div id="locSummary"></div></div>
+    <div class="card">
+      <div class="card-label">담당자 목록 <span style="font-size:10px;color:#D85A30;font-weight:400;">· 이름 클릭 시 수정</span></div>
+      <div id="inspList"></div>
+    </div>
+    <div class="card"><div class="card-label">미점검 목록</div><div id="pendList"></div></div>
+  </div>
+</div>
+
+<!-- 이름 편집 팝업 -->
+<div class="name-popup" id="namePopup">
+  <div style="font-size:11px;color:#9A9A96;margin-bottom:6px;">담당자 이름 수정</div>
+  <input type="text" id="nameInput" placeholder="새 이름 입력" onkeydown="if(event.key==='Enter')confirmName()" />
+  <div class="name-popup-btns">
+    <button class="btn-cancel" onclick="cancelName()">취소</button>
+    <button class="btn-confirm" onclick="confirmName()">확인</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ITEMS=[
+  {id:'F26',loc:'지하1층 식당',inspector:'채정훈'},{id:'F27',loc:'지하1층 식당',inspector:'최연상'},
+  {id:'F29',loc:'지하1층 식당',inspector:'윤상원'},{id:'F22',loc:'지하1층 식당',inspector:'박석인'},
+  {id:'F35',loc:'지하1층 식당',inspector:'오명진'},{id:'F28',loc:'지하1층 식당',inspector:'오명진'},
+  {id:'F25',loc:'지하1층 식당',inspector:'이세영'},{id:'F23',loc:'지하1층 식당',inspector:'한동희'},
+  {id:'F24',loc:'지하1층 식당',inspector:'노 준'},{id:'F34',loc:'지하1층 식당',inspector:'정지원'},
+  {id:'F33',loc:'지하1층 식당',inspector:'이갑연'},{id:'F31',loc:'지하1층 식당',inspector:'장지우'},
+  {id:'F32',loc:'지하1층 식당',inspector:'김영준'},{id:'F36',loc:'지하1층 식당',inspector:'김환기'},
+  {id:'F30',loc:'지하1층 식당',inspector:'이승준'},
+  {id:'F5',loc:'사무동 1층',inspector:'장지우'},{id:'F37',loc:'사무동 1층',inspector:'최진영'},
+  {id:'F6',loc:'사무동 1층',inspector:'조대운'},{id:'F1',loc:'사무동 1층',inspector:'서진명'},
+  {id:'F3',loc:'사무동 1층',inspector:'안광헌'},{id:'F4',loc:'사무동 1층',inspector:'정우철'},
+  {id:'F2',loc:'사무동 1층',inspector:'김준수'},
+  {id:'F7',loc:'사무동 2층',inspector:'김신영'},{id:'F8',loc:'사무동 2층',inspector:'홍규현'},
+  {id:'F9',loc:'사무동 2층',inspector:'정상협'},{id:'F13',loc:'사무동 2층',inspector:'정슬아'},
+  {id:'F12',loc:'사무동 2층',inspector:'김현정'},{id:'F10',loc:'사무동 2층',inspector:'김부영'},
+  {id:'F11',loc:'사무동 2층',inspector:'성세용'},
+  {id:'F19',loc:'사무동 3층',inspector:'박준현'},{id:'F14',loc:'사무동 3층',inspector:'김민성'},
+  {id:'F15',loc:'사무동 3층',inspector:'김주환'},{id:'F17',loc:'사무동 3층',inspector:'이상윤'},
+  {id:'F16',loc:'사무동 3층',inspector:'이시면'},{id:'F18',loc:'사무동 3층',inspector:'임승화'},
+  {id:'F21',loc:'사무동 3층',inspector:'김정학'},{id:'F20',loc:'사무동 3층',inspector:'이영찬'},
+];
+const LOCS=['지하1층 식당','사무동 1층','사무동 2층','사무동 3층'];
+const LOC_C={'지하1층 식당':['#E6F1FB','#0C447C'],'사무동 1층':['#E1F5EE','#085041'],'사무동 2층':['#EEEDFE','#3C3489'],'사무동 3층':['#FAEEDA','#633806']};
+const CHK_LABELS=['사용법 표시','나사의 손상','호스의 손상','충약 상태','봉인 상태'];
+const AV_COLORS=[['#E6F1FB','#0C447C'],['#E1F5EE','#085041'],['#EEEDFE','#3C3489'],['#FAEEDA','#633806'],['#FAECE7','#712B13']];
+
+let records={}, photo=null, chks=[false,false,false,false,false], curFilter='all';
+let currentDate='2026-05-19';
+let editingItemId=null;
+
+// ITEMS를 수정 가능한 배열로 복사
+let items=[...ITEMS.map(i=>({...i}))];
+
+function fmtKo(ds){
+  const d=new Date(ds+'T00:00:00');
+  return d.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+}
+
+// 날짜 초기화
+document.getElementById('dateInput').value=currentDate;
+document.getElementById('dateVal').textContent=fmtKo(currentDate);
+
+function toggleDateEdit(){
+  const w=document.getElementById('dateEditWrap');
+  w.style.display=w.style.display==='block'?'none':'block';
+}
+function applyDate(){
+  const val=document.getElementById('dateInput').value;
+  if(!val)return;
+  currentDate=val;
+  document.getElementById('dateVal').textContent=fmtKo(val);
+  document.getElementById('dateEditWrap').style.display='none';
+  showToast('점검일이 변경되었습니다.','ok');
+}
+
+// 소화기 선택 드롭다운 구성
+const sel=document.getElementById('extSelect');
+function buildSelect(){
+  while(sel.options.length>1) sel.remove(1);
+  LOCS.forEach(loc=>{
+    const grp=document.createElement('optgroup'); grp.label=loc;
+    items.filter(i=>i.loc===loc).forEach(item=>{
+      const o=document.createElement('option'); o.value=item.id;
+      o.textContent=item.id+' — '+item.inspector; grp.appendChild(o);
+    }); sel.appendChild(grp);
+  });
+}
+buildSelect();
+
+function onSelectExt(){
+  const id=sel.value, info=document.getElementById('selInfo');
+  if(!id){info.style.display='none';return;}
+  const item=items.find(i=>i.id===id),[bg,txt]=LOC_C[item.loc];
+  info.style.display='flex';
+  info.innerHTML=`<strong style="color:#1A1A18;">${item.id}</strong><span class="loc-badge" style="background:${bg};color:${txt};">${item.loc}</span><span style="color:#1A1A18;">👤 ${item.inspector}</span>`;
+}
+
+// 점검자 이름 인라인 편집 팝업
+function openNameEdit(itemId, triggerEl){
+  editingItemId=itemId;
+  const item=items.find(i=>i.id===itemId);
+  const popup=document.getElementById('namePopup');
+  document.getElementById('nameInput').value=item.inspector;
+  // 위치 계산
+  const rect=triggerEl.getBoundingClientRect();
+  const appRect=document.querySelector('.app').getBoundingClientRect();
+  popup.style.display='block';
+  popup.style.top=(rect.bottom-appRect.top+4)+'px';
+  popup.style.left=Math.max(0,rect.left-appRect.left)+'px';
+  setTimeout(()=>document.getElementById('nameInput').focus(),50);
+}
+function cancelName(){
+  document.getElementById('namePopup').style.display='none';
+  editingItemId=null;
+}
+function confirmName(){
+  const val=document.getElementById('nameInput').value.trim();
+  if(!val){showToast('이름을 입력해 주세요.','err');return;}
+  if(editingItemId){
+    const item=items.find(i=>i.id===editingItemId);
+    item.inspector=val;
+    if(records[editingItemId]) records[editingItemId].inspector=val;
+    buildSelect();
+    document.getElementById('namePopup').style.display='none';
+    editingItemId=null;
+    showToast('담당자 이름이 변경되었습니다.','ok');
+    renderInspector();
+    renderChecklist();
+    onSelectExt();
+  }
+}
+
+// 팝업 외부 클릭 시 닫기
+document.addEventListener('click',function(e){
+  const popup=document.getElementById('namePopup');
+  if(popup.style.display==='block' && !popup.contains(e.target) && !e.target.classList.contains('editable-name') && !e.target.classList.contains('edit-tag')){
+    cancelName();
+  }
+});
+
+function toggleChk(n){
+  chks[n-1]=!chks[n-1];
+  document.getElementById('box'+n).classList.toggle('checked',chks[n-1]);
+  const c=chks.filter(Boolean).length;
+  document.getElementById('progTxt').textContent=c+' / 5';
+  document.getElementById('progBar').style.width=(c/5*100)+'%';
+}
+
+function handlePhoto(e){
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    photo=ev.target.result;
+    const img=document.getElementById('prevImg');
+    img.src=photo; img.style.display='block';
+    document.getElementById('camHolder').style.display='none';
+    document.getElementById('camWrap').classList.add('has-img');
+  }; r.readAsDataURL(f);
+}
+
+function submitInsp(){
+  const id=sel.value;
+  if(!id){showToast('소화기를 선택해 주세요.','err');return;}
+  if(!photo){showToast('사진을 촬영해 주세요.','err');return;}
+  const pass=chks.filter(Boolean).length;
+  const status=pass===5?'pass':pass>=3?'partial':'fail';
+  const item=items.find(i=>i.id===id);
+  records[id]={id,loc:item.loc,inspector:item.inspector,photo,chks:[...chks],pass,status,date:fmtKo(currentDate)};
+  showToast('✅ '+id+' 점검 완료! ('+pass+'/5 통과)','ok');
+  setTimeout(()=>{resetForm();switchTab('checklist');},1100);
+}
+
+function resetForm(){
+  sel.value=''; document.getElementById('selInfo').style.display='none';
+  chks=[false,false,false,false,false];
+  [1,2,3,4,5].forEach(i=>document.getElementById('box'+i).classList.remove('checked'));
+  document.getElementById('progTxt').textContent='0 / 5';
+  document.getElementById('progBar').style.width='0%';
+  photo=null;
+  document.getElementById('prevImg').style.display='none';
+  document.getElementById('camHolder').style.display='flex';
+  document.getElementById('camWrap').classList.remove('has-img');
+  document.getElementById('fileInput').value='';
+}
+
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+function switchTab(name){
+  ['inspect','checklist','inspector'].forEach(id=>{
+    document.getElementById('tab-'+id).style.display=id===name?'':'none';
+  });
+  document.querySelectorAll('.tab').forEach((el,i)=>{
+    el.classList.toggle('active',['inspect','checklist','inspector'][i]===name);
+  });
+  if(name==='checklist') renderChecklist();
+  if(name==='inspector') renderInspector();
+}
+
+function setFilter(f,el){
+  curFilter=f;
+  document.querySelectorAll('.flt-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on'); renderChecklist();
+}
+
+function renderChecklist(){
+  const total=items.length, done=Object.keys(records).length;
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-done').textContent=done;
+  document.getElementById('s-pend').textContent=total-done;
+  document.getElementById('s-pct').textContent=Math.round(done/total*100)+'%';
+  document.getElementById('pbar').style.width=Math.round(done/total*100)+'%';
+  let list=items;
+  if(curFilter==='done') list=items.filter(i=>records[i.id]);
+  else if(curFilter==='pend') list=items.filter(i=>!records[i.id]);
+  else if(LOCS.includes(curFilter)) list=items.filter(i=>i.loc===curFilter);
+  const card=document.getElementById('listCard');
+  if(!list.length){card.innerHTML='<div class="empty">해당 항목 없음</div>';return;}
+  card.innerHTML=list.map(item=>{
+    const rec=records[item.id],[bg,txt]=LOC_C[item.loc];
+    const thumb=rec&&rec.photo?`<img class="thumb-s" src="${rec.photo}" alt="사진" />`:`<div class="thumb-ph">🧯</div>`;
+    const dots=rec?rec.chks.map((v,i)=>`<span class="dot ${v?'dot-ok':'dot-ng'}" title="${CHK_LABELS[i]}">${v?'✓':'✗'}</span>`).join(''):'';
+    const badge=rec?(rec.status==='pass'?'<span class="badge b-pass">정상</span>':rec.status==='partial'?'<span class="badge b-part">일부</span>':'<span class="badge b-fail">불합격</span>'):'<span class="badge b-pend">미점검</span>';
+    return `<div class="list-item">
+      ${thumb}
+      <div class="list-info">
+        <div class="list-id">${item.id} <span style="font-weight:400;font-size:11px;color:#9A9A96;">담당: ${item.inspector}</span></div>
+        <div class="list-sub"><span style="font-size:10px;padding:1px 7px;border-radius:20px;background:${bg};color:${txt};">${item.loc}</span>${rec?' &nbsp;'+rec.date:''}</div>
+        ${rec?'<div class="chk-dots">'+dots+'</div>':''}
+      </div>
+      <div style="text-align:right;flex-shrink:0;">${badge}${rec?'<div style="font-size:10px;color:#9A9A96;margin-top:2px;">'+rec.pass+'/5</div>':''}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderInspector(){
+  // 위치별 현황
+  document.getElementById('locSummary').innerHTML=LOCS.map(loc=>{
+    const total=items.filter(i=>i.loc===loc).length;
+    const done=items.filter(i=>i.loc===loc&&records[i.id]).length;
+    const pct=Math.round(done/total*100);
+    const [bg,txt]=LOC_C[loc];
+    return `<div class="loc-section">
+      <div class="loc-header">
+        <span style="font-size:12px;font-weight:700;"><span style="font-size:10px;padding:2px 8px;border-radius:20px;background:${bg};color:${txt};">${loc}</span></span>
+        <span style="font-size:12px;color:#9A9A96;">${done}/${total} <strong style="color:#1D9E75;">${pct}%</strong></span>
+      </div>
+      <div class="prog-bg"><div class="prog-fill" style="width:${pct}%;"></div></div>
+    </div>`;
+  }).join('');
+
+  // 담당자 목록 — 이름 클릭으로 수정
+  let ai=0;
+  document.getElementById('inspList').innerHTML=items.map(item=>{
+    const rec=records[item.id];
+    const [abg,atxt]=AV_COLORS[ai++%AV_COLORS.length];
+    const badge=rec?(rec.status==='pass'?'<span class="badge b-pass">정상</span>':rec.status==='partial'?'<span class="badge b-part">일부</span>':'<span class="badge b-fail">불합격</span>'):'<span class="badge b-pend">미점검</span>';
+    return `<div class="insp-item" id="row-${item.id}">
+      <div class="insp-av" style="background:${abg};color:${atxt};">${item.inspector.trim().slice(0,2)}</div>
+      <div class="insp-info">
+        <div class="insp-name">
+          <span class="editable-name" onclick="openNameEdit('${item.id}',this)">${item.inspector}</span>
+          <span class="edit-tag" onclick="openNameEdit('${item.id}',this.previousElementSibling)">✏️</span>
+          <span style="font-size:11px;color:#9A9A96;margin-left:4px;">${item.id}</span>
+        </div>
+        <div style="font-size:11px;color:#9A9A96;margin-top:2px;">${item.loc}${rec?' &nbsp;· '+rec.date:''}</div>
+      </div>
+      ${badge}
+    </div>`;
+  }).join('');
+
+  // 미점검 목록
+  const pending=items.filter(i=>!records[i.id]);
+  const pendEl=document.getElementById('pendList');
+  if(!pending.length){
+    pendEl.innerHTML='<div style="text-align:center;padding:14px 0;color:#1D9E75;font-size:13px;font-weight:500;">✅ 모든 소화기 점검 완료</div>';
+  } else {
+    pendEl.innerHTML=pending.map(p=>{
+      const [bg,txt]=LOC_C[p.loc];
+      return `<div class="list-item">
+        <div class="thumb-ph">🧯</div>
+        <div class="list-info">
+          <div class="list-id">${p.id}</div>
+          <div class="list-sub"><span style="font-size:10px;padding:1px 7px;border-radius:20px;background:${bg};color:${txt};">${p.loc}</span> 담당: ${p.inspector}</div>
+        </div>
+        <button class="go-btn" onclick="goInspect('${p.id}')">점검하기</button>
+      </div>`;
+    }).join('');
+  }
+}
+
+function goInspect(id){sel.value=id;onSelectExt();switchTab('inspect');}
+renderChecklist();
+</script>
