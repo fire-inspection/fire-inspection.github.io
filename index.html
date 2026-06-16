@@ -147,7 +147,10 @@
                 <input type="date" id="dateInput" onchange="applyDate()" />
             </div>
         </div>
-        <button class="admin-btn" id="adminBtn" onclick="onAdminBtn()">🔒 관리자<br>로그인</button>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button class="admin-btn" id="excelBtn" onclick="exportExcel()" style="display:none;">📊 엑셀로<br>내보내기</button>
+            <button class="admin-btn" id="adminBtn" onclick="onAdminBtn()">🔒 관리자<br>로그인</button>
+        </div>
     </div>
 
     <div class="tabs" id="tabBar" style="display:none;">
@@ -702,6 +705,45 @@
         document.getElementById('locFindCard').style.display='none';
     }
 
+    function exportExcel(){
+        const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        const statusKo=s=>s==='pass'?'정상':s==='partial'?'일부':s==='fail'?'불합격':'미점검';
+        const cellTxt=v=>`<Cell><Data ss:Type="String">${esc(v)}</Data></Cell>`;
+        const header=['위치','관리번호','담당자','상태',...CHK_LABELS,'통과(/5)','점검일'];
+        let rowsXml='';
+        rowsXml+='<Row ss:StyleID="hdr">'+header.map(h=>cellTxt(h)).join('')+'</Row>';
+        items.forEach(item=>{
+            const rec=records[item.id];
+            const chkCols=CHK_LABELS.map((_,i)=>{
+                if(!rec) return '';
+                if(rec.nas[i]) return '해당없음';
+                return rec.chks[i]?'정상':'불합격';
+            });
+            const row=[item.loc,item.id,item.inspector,statusKo(rec&&rec.status),...chkCols,rec?rec.pass+'/5':'',rec?rec.date:''];
+            rowsXml+='<Row>'+row.map(c=>cellTxt(c)).join('')+'</Row>';
+        });
+        const widths=[90,80,80,70,80,80,80,80,80,80,110].map(w=>`<Column ss:Width="${w}"/>`).join('');
+        const xml=`<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Styles>
+<Style ss:ID="hdr"><Font ss:Bold="1"/><Interior ss:Color="#D85A30" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center"/></Style>
+</Styles>
+<Worksheet ss:Name="소화기 점검 체크리스트">
+<Table>${widths}${rowsXml}</Table>
+</Worksheet>
+</Workbook>`;
+        const blob=new Blob(['\ufeff'+xml],{type:'application/vnd.ms-excel;charset=utf-8'});
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download='소화기_점검_체크리스트_'+todayStr()+'.xls';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+        showToast('📊 엑셀 파일이 저장되었습니다.','ok');
+    }
+
     function showToast(msg,type){
         const t=document.getElementById('toast');
         t.textContent=msg; t.className='toast '+type+' show';
@@ -861,17 +903,18 @@
     function applyRole(){
         const btn=document.getElementById('adminBtn');
         const tabBar=document.getElementById('tabBar');
+        const excelBtn=document.getElementById('excelBtn');
         if(isAdmin){
             tabBar.style.display='';
             btn.classList.add('on');
             btn.innerHTML='🔓 로그아웃';
-            // 관리자는 점검하기 없음 → 체크리스트부터
+            excelBtn.style.display='';
             switchTab('checklist');
         } else {
             tabBar.style.display='none';
             btn.classList.remove('on');
             btn.innerHTML='🔒 관리자<br>로그인';
-            // 비관리자는 항상 점검하기 탭만
+            excelBtn.style.display='none';
             switchTab('inspect');
         }
     }
